@@ -1,12 +1,10 @@
 
-
-```php
 <?php
 
 $host = "localhost";
-$db   = "definitive_conversation_paz_db";
-$user = "angenda2";
-$pass = "7p5-WB3fIe1qLO(7_h";
+$db   = "agenda2";
+$user = "root";
+$pass = "123456";
 
 try {
     $pdo = new PDO(
@@ -22,3 +20,5 @@ try {
     die("Error de conexión a la base de datos.");
 }
 ?>
+
+

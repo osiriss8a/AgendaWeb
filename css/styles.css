@@ -2149,3 +2149,180 @@ footer i {
         width: 100%;
     }
 }
+
+
+/* ================= BUSCADOR P9 ================= */
+
+.buscador-card {
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 5px 20px rgba(90, 24, 36, 0.06);
+}
+
+.buscador-titulo {
+    margin-bottom: 18px;
+}
+
+.buscador-titulo h3 {
+    color: #5A1824;
+    font-family: 'Playfair Display', serif;
+    margin-bottom: 6px;
+}
+
+.buscador-titulo p {
+    color: #76666B;
+    font-size: 14px;
+}
+
+.buscador {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+}
+
+.buscador input,
+.buscador select {
+    padding: 13px;
+    border: 1px solid #E2CDD2;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    color: #3F3034;
+}
+
+.buscador input {
+    flex: 1 1 220px;
+    min-width: 0;
+    width: auto;
+}
+
+.buscador select {
+    flex: 0 1 210px;
+    width: auto;
+}
+
+.buscador input:focus,
+.buscador select:focus {
+    border-color: #9B3F52;
+}
+
+.buscador button,
+.buscador a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+@media (max-width: 600px) {
+
+    .buscador {
+        flex-direction: column;
+    }
+
+    .buscador input,
+    .buscador select,
+    .buscador button,
+    .buscador a {
+        width: 100%;
+    }
+
+    .buscador-card {
+        padding: 18px;
+    }
+
+}
+
+/* ================= BOTÓN BUSCAR P9 ================= */
+
+.buscador button.btn-guardar {
+    background: linear-gradient(135deg, #7A2636, #5A1824);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 25px;
+    min-width: 125px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 5px 12px rgba(90, 24, 36, 0.20);
+    transition: all 0.3s ease;
+}
+
+.buscador button.btn-guardar i {
+    font-size: 15px;
+    transition: transform 0.3s ease;
+}
+
+.buscador button.btn-guardar:hover {
+    background: linear-gradient(135deg, #9B3F52, #7A2636);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(90, 24, 36, 0.28);
+}
+
+.buscador button.btn-guardar:hover i {
+    transform: scale(1.15);
+}
+
+.buscador button.btn-guardar:active {
+    transform: scale(0.96);
+}
+
+.buscador button.btn-guardar:focus-visible {
+    outline: 3px solid #E8B7C0;
+    outline-offset: 3px;
+}
+
+/* ================= BOTÓN CERRAR SESIÓN ================= */
+
+.topbar a.btn-guardar {
+    background: linear-gradient(135deg, #7A2636, #5A1824);
+    color: #FFFFFF;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 5px 12px rgba(90, 24, 36, 0.18);
+    transition: all 0.3s ease;
+}
+
+.topbar a.btn-guardar i {
+    font-size: 15px;
+    transition: transform 0.3s ease;
+}
+
+.topbar a.btn-guardar:hover {
+    background: linear-gradient(135deg, #9B3F52, #7A2636);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(90, 24, 36, 0.25);
+}
+
+.topbar a.btn-guardar:hover i {
+    transform: translateX(3px);
+}
+
+.topbar a.btn-guardar:active {
+    transform: scale(0.96);
+}
+
+.topbar a.btn-guardar:focus-visible {
+    outline: 3px solid #E8B7C0;
+    outline-offset: 3px;
+}

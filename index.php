@@ -8,9 +8,8 @@ $resultado = $pdo->query(
 );
 
 $categorias = $resultado->fetchAll(PDO::FETCH_ASSOC);
-
-require __DIR__ . '/partes/sesion.php';
 ?>
+
 
 <!DOCTYPE html>
 <html lang="es">

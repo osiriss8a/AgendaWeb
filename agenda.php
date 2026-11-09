@@ -9,7 +9,65 @@ require_once __DIR__ . '/conexion.php';
 $usuarioId = (int) $_SESSION['uid'];
 
 /* =========================
-   OBTENER SOLO SUS EVENTOS
+   OBTENER DATOS DE BÚSQUEDA
+   ========================= */
+$q = substr(trim($_GET['q'] ?? ''), 0, 60);
+$categoriaId = (int) ($_GET['categoria'] ?? 0);
+
+/* =========================
+   OBTENER CATEGORÍAS
+   ========================= */
+$resultado = $pdo->query(
+    "SELECT id, nombre FROM categorias ORDER BY nombre"
+);
+
+$categorias = $resultado->fetchAll(PDO::FETCH_ASSOC);
+
+/* =========================
+   VALIDAR CATEGORÍA
+   ========================= */
+$idsValidos = array_map(
+    'intval',
+    array_column($categorias, 'id')
+);
+
+if (!in_array($categoriaId, $idsValidos, true)) {
+    $categoriaId = 0;
+}
+
+/* =========================
+   DETECTAR BÚSQUEDA
+   ========================= */
+$buscando = ($q !== '' || $categoriaId !== 0);
+
+/* =========================
+   CONSTRUIR CONSULTA P9
+   ========================= */
+$condiciones = ['eventos.usuario_id = :usuario_id'];
+
+$parametros = [
+    ':usuario_id' => $usuarioId
+];
+
+if ($q !== '') {
+
+    $patron = '%' . addcslashes($q, '%_\\') . '%';
+
+    $condiciones[] = '(eventos.titulo LIKE :titulo OR eventos.descripcion LIKE :descripcion)';
+
+    $parametros[':titulo'] = $patron;
+    $parametros[':descripcion'] = $patron;
+}
+
+if ($categoriaId !== 0) {
+
+    $condiciones[] = 'eventos.categoria_id = :categoria_id';
+
+    $parametros[':categoria_id'] = $categoriaId;
+}
+
+/* =========================
+   CONSULTAR EVENTOS
    ========================= */
 $sql = "SELECT
     eventos.id,
@@ -23,13 +81,11 @@ $sql = "SELECT
     FROM eventos
     INNER JOIN categorias
         ON eventos.categoria_id = categorias.id
-    WHERE eventos.usuario_id = :usuario_id
+    WHERE " . implode(' AND ', $condiciones) . "
     ORDER BY eventos.fecha, eventos.hora";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([
-    ':usuario_id' => $usuarioId
-]);
+$stmt->execute($parametros);
 
 $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -40,11 +96,13 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Mi Agenda - AgendaWeb</title>
 
     <!-- GOOGLE FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
         rel="stylesheet"
@@ -79,12 +137,14 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <h2>
                     Agenda<span>Web</span>
                 </h2>
+
                 <p>Organiza tus momentos</p>
             </div>
         </div>
 
         <!-- MENÚ -->
         <nav class="menu">
+
             <a href="index.php" class="menu-item">
                 <i class="fa-solid fa-house"></i>
                 <span>Inicio</span>
@@ -94,14 +154,17 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <i class="fa-solid fa-calendar-days"></i>
                 <span>Mi Agenda</span>
             </a>
+
         </nav>
 
         <!-- FRASE -->
         <div class="sidebar-frase">
             <i class="fa-solid fa-quote-left"></i>
+
             <p>
                 "Organiza tu tiempo y disfruta cada momento."
             </p>
+
             <i class="fa-solid fa-quote-right"></i>
         </div>
 
@@ -148,6 +211,7 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <section class="agenda-encabezado">
 
                 <div class="agenda-titulo">
+
                     <p class="etiqueta">
                         <i class="fa-solid fa-calendar-check"></i>
                         MIS EVENTOS
@@ -158,16 +222,24 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <p class="texto-inicio">
                         Aquí puedes consultar, editar y eliminar tus eventos registrados.
                     </p>
+
                 </div>
 
                 <div class="agenda-derecha">
 
                     <!-- CONTADOR -->
                     <div class="contador-eventos">
+
                         <strong><?= count($eventos) ?></strong>
+
                         <span>
-                            <?= count($eventos) === 1 ? 'evento' : 'eventos' ?>
+                            <?php if ($buscando): ?>
+                                <?= count($eventos) === 1 ? 'resultado' : 'resultados' ?>
+                            <?php else: ?>
+                                <?= count($eventos) === 1 ? 'evento' : 'eventos' ?>
+                            <?php endif; ?>
                         </span>
+
                     </div>
 
                     <!-- NUEVO EVENTO -->
@@ -177,34 +249,145 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </a>
 
                 </div>
+
+            </section>
+
+            <!-- ================= BUSCADOR P9 ================= -->
+            <section class="buscador-card">
+
+                <div class="buscador-titulo">
+
+                    <div>
+                        <h3>
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Buscar eventos
+                        </h3>
+
+                        <p>
+                            Encuentra tus eventos por nombre o categoría.
+                        </p>
+                    </div>
+
+                </div>
+
+                <form
+                    class="buscador"
+                    method="GET"
+                    action="agenda.php"
+                    role="search"
+                >
+
+                    <!-- TEXTO -->
+                    <input
+                        type="search"
+                        name="q"
+                        value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>"
+                        maxlength="60"
+                        placeholder="Buscar por título o descripción..."
+                        aria-label="Buscar eventos"
+                    >
+
+                    <!-- CATEGORÍAS -->
+                    <select
+                        name="categoria"
+                        aria-label="Filtrar por categoría"
+                    >
+
+                        <option value="0">
+                            Todas las categorías
+                        </option>
+
+                        <?php foreach ($categorias as $cat): ?>
+
+                            <option
+                                value="<?= (int) $cat['id'] ?>"
+                                <?= $categoriaId === (int) $cat['id'] ? 'selected' : '' ?>
+                            >
+                                <?= htmlspecialchars(
+                                    $cat['nombre'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>
+                            </option>
+
+                        <?php endforeach; ?>
+
+                    </select>
+
+                    <!-- BUSCAR -->
+                    <button type="submit" class="btn-guardar">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Buscar
+                    </button>
+
+                    <!-- LIMPIAR -->
+                    <?php if ($buscando): ?>
+
+                        <a href="agenda.php" class="btn-limpiar">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            Limpiar
+                        </a>
+
+                    <?php endif; ?>
+
+                </form>
+
             </section>
 
             <!-- ================= MENSAJES ================= -->
 
             <?php if (isset($_GET["guardado"])): ?>
+
                 <div class="mensaje-exito">
                     <i class="fa-solid fa-circle-check"></i>
                     <span>¡Evento guardado correctamente!</span>
                 </div>
+
             <?php endif; ?>
 
             <?php if (isset($_GET["actualizado"])): ?>
+
                 <div class="mensaje-exito">
                     <i class="fa-solid fa-circle-check"></i>
                     <span>¡Evento actualizado correctamente!</span>
                 </div>
+
             <?php endif; ?>
 
             <?php if (isset($_GET["eliminado"])): ?>
+
                 <div class="mensaje-exito">
                     <i class="fa-solid fa-circle-check"></i>
                     <span>¡Evento eliminado correctamente!</span>
                 </div>
+
             <?php endif; ?>
 
             <!-- ================= EVENTOS ================= -->
 
-            <?php if (count($eventos) === 0): ?>
+            <?php if (empty($eventos) && $buscando): ?>
+
+                <!-- SIN RESULTADOS -->
+                <section class="agenda-vacia">
+
+                    <div class="agenda-vacia-icon">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+
+                    <h3>Sin resultados para tu búsqueda.</h3>
+
+                    <p>
+                        No encontramos eventos que coincidan con los filtros seleccionados.
+                    </p>
+
+                    <a href="agenda.php" class="btn-guardar">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        Ver todos mis eventos
+                    </a>
+
+                </section>
+
+            <?php elseif (count($eventos) === 0): ?>
 
                 <!-- AGENDA VACÍA -->
                 <section class="agenda-vacia">
@@ -254,8 +437,10 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                                 <!-- CLIENTE -->
                                 <?php if (!empty($evento["cliente"])): ?>
+
                                     <div class="evento-dato">
                                         <i class="fa-solid fa-user"></i>
+
                                         <span>
                                             <?= htmlspecialchars(
                                                 $evento["cliente"],
@@ -264,12 +449,15 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             ) ?>
                                         </span>
                                     </div>
+
                                 <?php endif; ?>
 
                                 <!-- FECHA -->
                                 <?php if (!empty($evento["fecha"])): ?>
+
                                     <div class="evento-fecha">
                                         <i class="fa-regular fa-calendar"></i>
+
                                         <span>
                                             <?= htmlspecialchars(
                                                 $evento["fecha"],
@@ -278,12 +466,15 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             ) ?>
                                         </span>
                                     </div>
+
                                 <?php endif; ?>
 
                                 <!-- HORA -->
                                 <?php if (!empty($evento["hora"])): ?>
+
                                     <div class="evento-dato">
                                         <i class="fa-regular fa-clock"></i>
+
                                         <span>
                                             <?= htmlspecialchars(
                                                 substr($evento["hora"], 0, 5),
@@ -292,12 +483,15 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             ) ?>
                                         </span>
                                     </div>
+
                                 <?php endif; ?>
 
                                 <!-- CATEGORÍA -->
                                 <?php if (!empty($evento["categoria"])): ?>
+
                                     <div class="evento-dato">
                                         <i class="fa-solid fa-tag"></i>
+
                                         <span>
                                             <?= htmlspecialchars(
                                                 $evento["categoria"],
@@ -306,12 +500,15 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             ) ?>
                                         </span>
                                     </div>
+
                                 <?php endif; ?>
 
                                 <!-- UBICACIÓN -->
                                 <?php if (!empty($evento["ubicacion"])): ?>
+
                                     <div class="evento-dato">
                                         <i class="fa-solid fa-location-dot"></i>
+
                                         <span>
                                             <?= htmlspecialchars(
                                                 $evento["ubicacion"],
@@ -320,12 +517,15 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             ) ?>
                                         </span>
                                     </div>
+
                                 <?php endif; ?>
 
                                 <!-- DESCRIPCIÓN -->
                                 <?php if (!empty($evento["descripcion"])): ?>
+
                                     <div class="evento-descripcion">
                                         <i class="fa-solid fa-align-left"></i>
+
                                         <p>
                                             <?= nl2br(
                                                 htmlspecialchars(
@@ -336,6 +536,7 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             ) ?>
                                         </p>
                                     </div>
+
                                 <?php endif; ?>
 
                                 <!-- BOTONES -->
@@ -356,6 +557,7 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         method="POST"
                                         onsubmit="return confirm('¿Quieres eliminar este evento?');"
                                     >
+
                                         <input
                                             type="hidden"
                                             name="id"
@@ -369,11 +571,13 @@ $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <i class="fa-solid fa-trash"></i>
                                             Eliminar
                                         </button>
+
                                     </form>
 
                                 </div>
 
                             </div>
+
                         </article>
 
                     <?php endforeach; ?>
